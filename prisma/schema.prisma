@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Merchant {
+  id           String   @id @default(uuid())
+  businessName String
+  email        String   @unique
+  passwordHash String
+  website      String?
+  category     String?
+  currency     String   @default("INR")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customers       Customer[]
+  products        Product[]
+  orders          Order[]
+  payments        Payment[]
+  revenueRisks    RevenueRisk[]
+  aiDecisions     AIDecision[]
+  recoveryActions RecoveryAction[]
+  policies        MerchantPolicy?
+  auditLogs       AuditLog[]
+}
+
+model Customer {
+  id                 String   @id @default(uuid())
+  merchantId         String
+  name               String
+  email              String
+  phone              String?
+  totalOrders        Int      @default(0)
+  totalSpent         Float    @default(0.0)
+  successfulPayments Int      @default(0)
+  failedPayments     Int      @default(0)
+  recoveryAttempts   Int      @default(0)
+  recoveredAmount    Float    @default(0.0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  merchant     Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  orders       Order[]
+  payments     Payment[]
+  revenueRisks RevenueRisk[]
+
+  @@index([merchantId])
+  @@index([email])
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  merchantId  String
+  name        String
+  description String?  @db.Text
+  price       Float
+  category    String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+}
+
+model Order {
+  id              String   @id @default(uuid())
+  merchantId      String
+  customerId      String
+  amount          Float
+  currency        String   @default("INR")
+  status          String   @default("created") // created, pending, paid, failed, cancelled, recovery_pending, recovered
+  razorpayOrderId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  merchant     Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  customer     Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  payments     Payment[]
+  revenueRisks RevenueRisk[]
+
+  @@index([merchantId])
+  @@index([customerId])
+}
+
+model Payment {
+  id                String   @id @default(uuid())
+  merchantId        String
+  orderId           String
+  customerId        String
+  amount            Float
+  currency          String   @default("INR")
+  razorpayPaymentId String?
+  razorpayOrderId   String?
+  status            String   @default("pending") // created, pending, failed, success, cancelled
+  failureReason     String?
+  attemptNumber     Int      @default(1)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  merchant     Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customer     Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  revenueRisks RevenueRisk[]
+
+  @@index([merchantId])
+  @@index([orderId])
+  @@index([customerId])
+}
+
+model RevenueRisk {
+  id                  String   @id @default(uuid())
+  merchantId          String
+  orderId             String
+  customerId          String
+  paymentId           String?
+  amount              Float
+  reason              String
+  riskLevel           String   @default("low") // low, medium, high, critical
+  status              String   @default("at_risk") // at_risk, recoverable, recovering, recovered, failed, escalated, stopped
+  eligibleForRecovery Boolean  @default(true)
+  recoveryAttempts    Int      @default(0)
+  recoveredAmount     Float    @default(0.0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  merchant        Merchant         @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customer        Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  payment         Payment?         @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  aiDecisions     AIDecision[]
+  recoveryActions RecoveryAction[]
+
+  @@index([merchantId])
+  @@index([orderId])
+  @@index([customerId])
+}
+
+model AIDecision {
+  id                       String   @id @default(uuid())
+  merchantId               String
+  revenueRiskId            String
+  diagnosis                String
+  riskLevel                String
+  recommendedAction        String
+  confidence               Float
+  requiresCustomerApproval Boolean  @default(false)
+  requiresCustomerAction   Boolean  @default(true)
+  requiresMerchantApproval Boolean  @default(false)
+  recoverability           String   @default("high") // high, medium, low, unknown
+  explanation              String   @db.Text
+  createdAt                DateTime @default(now())
+
+  merchant    Merchant    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  revenueRisk RevenueRisk @relation(fields: [revenueRiskId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([revenueRiskId])
+}
+
+model RecoveryAction {
+  id            String   @id @default(uuid())
+  merchantId    String
+  revenueRiskId String
+  actionType    String // retry_payment, send_reminder, customer_recheckout, escalate, stop
+  amount        Float
+  attemptNumber Int      @default(1)
+  status        String   @default("pending") // pending, approved, executing, success, failed, rejected, cancelled
+  result        String?  @db.Text
+  approvedBy    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  merchant    Merchant    @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  revenueRisk RevenueRisk @relation(fields: [revenueRiskId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([revenueRiskId])
+}
+
+model MerchantPolicy {
+  id                       String   @id @default(uuid())
+  merchantId               String   @unique
+  maxRetries               Int      @default(2)
+  maxAutoRecoveryAmount    Float    @default(10000.0)
+  highValueThreshold       Float    @default(10000.0)
+  requireCustomerApproval  Boolean  @default(true)
+  requireMerchantApproval  Boolean  @default(true)
+  recoveryWindowHours      Int      @default(24)
+  automaticRecoveryEnabled Boolean  @default(true)
+  allowedActions           Json // Array of permitted action types
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id           String   @id @default(uuid())
+  merchantId   String
+  eventType    String
+  entityId     String?
+  action       String
+  reason       String?  @db.Text
+  amount       Float?   @default(0.0)
+  policyResult String?  @default("Allowed")
+  actor        String   @default("System") // AI Agent, Merchant Admin, Customer, System
+  status       String   @default("Completed")
+  metadata     Json?
+  timestamp    DateTime @default(now())
+
+  merchant Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([eventType])
+  @@index([timestamp])
+}
+
+model WebhookEvent {
+  id        String   @id @default(uuid())
+  eventId   String   @unique
+  eventType String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
+}
