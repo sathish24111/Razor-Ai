@@ -3,8 +3,8 @@ import { useRecovery } from '../context/RecoveryContext';
 import { CheckCircle2, XCircle, ArrowLeft, RefreshCw, HelpCircle, ShieldCheck } from 'lucide-react';
 
 export const PaymentResult: React.FC = () => {
-  const { selectedEvent, navigateTo } = useRecovery();
-  const event = selectedEvent || {
+  const { selectedEvent, lastResultEvent, navigateTo } = useRecovery();
+  const event = lastResultEvent || selectedEvent || {
     id: 'EVT-1024',
     orderId: 'ORD-1024',
     customerName: 'Arjun Kumar',

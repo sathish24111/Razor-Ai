@@ -42,6 +42,7 @@ interface RecoveryContextType {
   updatePolicy: (policy: MerchantPolicy) => void;
   events: RecoveryEvent[];
   selectedEvent: RecoveryEvent | null;
+  lastResultEvent: RecoveryEvent | null;
   setSelectedEventId: (id: string | null) => void;
   customers: Customer[];
   selectedCustomer: Customer | null;
@@ -85,6 +86,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [simulationStep, setSimulationStep] = useState<number>(0);
   const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [lastResultEvent, setLastResultEvent] = useState<RecoveryEvent | null>(null);
 
   const selectedEvent = events.find(e => e.id === selectedEventId || e.orderId === selectedEventId) || events[0] || null;
   const selectedCustomer = customers.find(c => c.id === selectedCustomerId) || customers[0] || null;
@@ -278,6 +280,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       };
 
       setSelectedEventId(event.id);
+      setLastResultEvent(updatedEvent);
       setEvents(prev => prev.map(e => (e.id === event.id || e.orderId === event.orderId) ? updatedEvent : e));
 
       setKpiStats(prev => ({
@@ -295,6 +298,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         attempts: event.attempts + 1,
       };
 
+      setLastResultEvent(updatedEvent);
       setEvents(prev => prev.map(e => (e.id === event.id || e.orderId === event.orderId) ? updatedEvent : e));
 
       return { success: false, event: updatedEvent };
@@ -359,6 +363,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       updatePolicy,
       events,
       selectedEvent,
+      lastResultEvent,
       setSelectedEventId,
       customers,
       selectedCustomer,
