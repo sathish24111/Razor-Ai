@@ -245,6 +245,11 @@ export const analyticsService = {
 
 // Simulation Service
 export const simulationService = {
+  createSingle: async (data) => {
+    const res = await api.post('/simulation/payment', data);
+    return res.data;
+  },
+
   simulatePayment: async (data) => {
     const res = await api.post('/simulation/payment', data);
     return res.data;

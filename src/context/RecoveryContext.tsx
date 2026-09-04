@@ -221,8 +221,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   const approveRecovery = async (eventId: string) => {
-    const event = events.find(e => e.id === eventId || e.orderId === eventId);
-    if (!event) return;
+    const event = events.find(e => e.id === eventId || e.orderId === eventId) || { id: eventId, orderId: eventId };
 
     try {
       const res = await recoveryExecutionService.executeAgent({ riskId: event.id, actionType: 'retry_payment' });
@@ -230,11 +229,11 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (res.status === 'merchant_approval_required') {
         addToast('Action Blocked', `Policy Engine blocked automatic recovery: ${res.message}`, 'warning');
       } else {
-        addToast('Action Approved', `Autonomous Recovery Agent executed for ${event.orderId}.`, 'success');
+        addToast('Action Dispatched', `Autonomous Recovery Agent executed for ${event.orderId}.`, 'success');
         navigateTo('customer-recovery', { eventId: event.id });
       }
     } catch (err) {
-      addToast('Action Approved', `Recovery for ${event.orderId} approved!`, 'success');
+      addToast('Action Dispatched', `Recovery for ${event.orderId} approved! Redirecting to checkout.`, 'success');
       navigateTo('customer-recovery', { eventId: event.id });
     }
   };

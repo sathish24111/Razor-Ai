@@ -17,7 +17,8 @@ import {
   MessageSquare,
   Gift,
   RefreshCw,
-  ArrowRight
+  ArrowRight,
+  CreditCard
 } from 'lucide-react';
 
 export const AIDecisionCenter: React.FC = () => {
@@ -257,6 +258,13 @@ export const AIDecisionCenter: React.FC = () => {
                     >
                       <span>Execute Action</span>
                       <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => navigateTo('customer-recovery', { eventId: selectedDecision.orderId })}
+                      className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center gap-1 shadow-xs"
+                    >
+                      <CreditCard className="w-3.5 h-3.5" />
+                      <span>Launch Razorpay Checkout</span>
                     </button>
                     <button
                       onClick={() => navigateTo('event-details', { eventId: selectedDecision.orderId })}

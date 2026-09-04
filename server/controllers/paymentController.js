@@ -223,7 +223,7 @@ export async function verifyRazorpayPayment(req, res, next) {
           where: { id: localPayment.id },
           data: {
             status: 'success',
-            razorpayPaymentId,
+            razorpayPaymentId: razorpay_payment_id,
             razorpayOrderId: razorpay_order_id,
           },
         });

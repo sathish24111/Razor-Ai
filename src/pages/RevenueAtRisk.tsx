@@ -18,8 +18,8 @@ export const RevenueAtRisk: React.FC = () => {
       evt.customerName.toLowerCase().includes(search.toLowerCase()) ||
       evt.failureReason.toLowerCase().includes(search.toLowerCase());
     
-    const matchesRisk = riskFilter === 'All' || evt.riskLevel === riskFilter;
-    const matchesStatus = statusFilter === 'All' || evt.status === statusFilter;
+    const matchesRisk = riskFilter === 'All' || evt.riskLevel.toLowerCase() === riskFilter.toLowerCase();
+    const matchesStatus = statusFilter === 'All' || evt.status.toLowerCase() === statusFilter.toLowerCase();
 
     return matchesSearch && matchesRisk && matchesStatus;
   });
