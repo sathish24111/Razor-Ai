@@ -277,6 +277,7 @@ export const RecoveryProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         attempts: event.attempts + 1,
       };
 
+      setSelectedEventId(event.id);
       setEvents(prev => prev.map(e => (e.id === event.id || e.orderId === event.orderId) ? updatedEvent : e));
 
       setKpiStats(prev => ({

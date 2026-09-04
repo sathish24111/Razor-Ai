@@ -12,9 +12,10 @@ export const PaymentResult: React.FC = () => {
     status: 'Recovered',
     attempts: 1,
     maxAttempts: 2,
+    revenueRecovered: 4999,
   };
 
-  const isSuccess = event.status === 'Recovered';
+  const isSuccess = ['Recovered', 'success', 'paid', 'Completed', 'Approved'].includes(event.status) || (event.revenueRecovered !== undefined && event.revenueRecovered > 0);
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col justify-center items-center p-4">
